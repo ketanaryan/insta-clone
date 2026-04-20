@@ -4,7 +4,6 @@ import { AuthContext } from '../context/AuthContext';
 import { FiHome, FiPlusSquare, FiMessageCircle, FiLogOut, FiMenu, FiX, FiSearch, FiHeart, FiSettings } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import { io } from 'socket.io-client';
 import api from '../services/api';
 import LogoutModal from './LogoutModal';
 
@@ -36,17 +35,7 @@ const Navbar = () => {
     fetchCounts();
     const interval = setInterval(fetchCounts, 15000); // 15s polling fallback
 
-    // Socket listener for instant updates
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000');
-    socket.emit('join', currentUser.username);
-    socket.on('receive_message', () => {
-       setUnreadMessages(prev => prev + 1);
-    });
-
-    return () => {
-      clearInterval(interval);
-      socket.disconnect();
-    };
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   const handleLogout = () => setShowLogoutModal(true);

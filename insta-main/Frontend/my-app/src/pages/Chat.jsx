@@ -1,7 +1,6 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { FiSend, FiInfo, FiPhone, FiVideo, FiImage, FiSearch, FiArrowLeft, FiMoreHorizontal } from 'react-icons/fi';
-import { io } from 'socket.io-client';
 import api from '../services/api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -25,49 +24,8 @@ const Chat = () => {
   const [isSearching, setIsSearching] = useState(false);
   
   const messagesEndRef = useRef(null);
-  const socketRef = useRef(null);
   const fileInputRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
-
-  // Initialize Socket
-  useEffect(() => {
-    if (!currentUser) return;
-
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:3000');
-
-    socketRef.current.emit('join', currentUser.username);
-
-    socketRef.current.on('get_online_users', (users) => {
-      setOnlineUsers(users);
-    });
-
-    socketRef.current.on('receive_message', (data) => {
-      // If the message is for the active conversation, add it to the list
-      if (activeConversation && data.conversationId === activeConversation._id) {
-        setMessages(prev => [...prev, data]);
-        markAsRead();
-        scrollToBottom();
-      }
-      
-      // Update conversations list with last message
-      setConversations(prev => prev.map(conv => {
-        if (conv._id === data.conversationId) {
-          return { ...conv, lastMessage: data.text || "Sent an image", updatedAt: new Date().toISOString() };
-        }
-        return conv;
-      }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)));
-    });
-
-    socketRef.current.on('user_typing', (data) => {
-      if (activeConversation && data.sender === activeConversation.otherUser.username) {
-        setTypingUsers(prev => ({ ...prev, [data.sender]: data.isTyping }));
-      }
-    });
-
-    return () => {
-      socketRef.current.disconnect();
-    };
-  }, [currentUser, activeConversation]);
+  const pollingRef = useRef(null);
 
   // Fetch Conversations
   useEffect(() => {
@@ -106,22 +64,31 @@ const Chat = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       if (!activeConversation) return;
-      setMessagesLoading(true);
       try {
         const res = await api.get(`/messages/${activeConversation._id}`);
         setMessages(res.data);
         
         // Mark as read
         await api.patch(`/messages/read/${activeConversation._id}`, { username: currentUser.username });
-        
-        setTimeout(scrollToBottom, 50);
       } catch (err) {
         console.error("Error fetching messages:", err);
-      } finally {
-        setMessagesLoading(false);
       }
     };
-    fetchMessages();
+    
+    if (activeConversation) {
+        setMessagesLoading(true);
+        fetchMessages().finally(() => {
+            setMessagesLoading(false);
+            setTimeout(scrollToBottom, 50);
+        });
+        
+        // Setup Polling for 3 seconds
+        pollingRef.current = setInterval(fetchMessages, 3000);
+    }
+    
+    return () => {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+    }
   }, [activeConversation, currentUser.username]);
 
   const markAsRead = async () => {
@@ -172,9 +139,6 @@ const Chat = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Emit to socket
-      socketRef.current.emit('send_message', res.data);
-
       // Replace temp message with real one if it was text
       if (!imageFile) {
           setMessages(prev => prev.map(m => m.isTemp ? res.data : m));
@@ -198,23 +162,6 @@ const Chat = () => {
 
   const handleTyping = (e) => {
     setInputMessage(e.target.value);
-
-    if (!activeConversation) return;
-
-    socketRef.current.emit('typing', {
-      sender: currentUser.username,
-      receiver: activeConversation.otherUser.username,
-      isTyping: true
-    });
-
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      socketRef.current.emit('typing', {
-        sender: currentUser.username,
-        receiver: activeConversation.otherUser.username,
-        isTyping: false
-      });
-    }, 2000);
   };
 
   const handleSearch = async (val) => {

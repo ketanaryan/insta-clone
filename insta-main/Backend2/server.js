@@ -474,55 +474,12 @@ app.patch("/notifications/read-all/:username", async (req, res) => {
   }
 });
 
-const server = app.listen(port, '0.0.0.0', () => console.log(`InstaVibe backend running on port ${port}`));
+// Export app for Vercel Serverless
+module.exports = app;
 
-// ─── Socket.io Setup ────────────────────────────────────────────────────────
-const { Server } = require("socket.io");
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-let onlineUsers = new Map(); // username -> socketId
-
-io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
-
-  socket.on("join", (username) => {
-    onlineUsers.set(username, socket.id);
-    io.emit("get_online_users", Array.from(onlineUsers.keys()));
-    console.log(`${username} joined`);
-  });
-
-  socket.on("send_message", (data) => {
-    // data: { sender, receiver, text, image, conversationId, createdAt }
-    const receiverSocketId = onlineUsers.get(data.receiver);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("receive_message", data);
-    }
-  });
-
-  socket.on("typing", (data) => {
-    // data: { sender, receiver, isTyping }
-    const receiverSocketId = onlineUsers.get(data.receiver);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("user_typing", data);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    for (let [username, socketId] of onlineUsers.entries()) {
-      if (socketId === socket.id) {
-        onlineUsers.delete(username);
-        break;
-      }
-    }
-    io.emit("get_online_users", Array.from(onlineUsers.keys()));
-    console.log("Client disconnected");
-  });
-});
+if (!process.env.VERCEL) {
+  app.listen(port, '0.0.0.0', () => console.log(`InstaVibe backend running on port ${port}`));
+}
 
 // ─── Search Users (For starting a chat) ──────────────────────────────────────
 app.get("/users/search", async (req, res) => {
