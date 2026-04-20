@@ -474,7 +474,7 @@ app.patch("/notifications/read-all/:username", async (req, res) => {
   }
 });
 
-const server = app.listen(port, () => console.log(`InstaVibe backend running on port ${port}`));
+const server = app.listen(port, '0.0.0.0', () => console.log(`InstaVibe backend running on port ${port}`));
 
 // ─── Socket.io Setup ────────────────────────────────────────────────────────
 const { Server } = require("socket.io");
