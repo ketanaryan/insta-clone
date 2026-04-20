@@ -37,7 +37,7 @@ const Navbar = () => {
     const interval = setInterval(fetchCounts, 15000); // 15s polling fallback
 
     // Socket listener for instant updates
-    const socket = io('http://localhost:3000');
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000');
     socket.emit('join', currentUser.username);
     socket.on('receive_message', () => {
        setUnreadMessages(prev => prev + 1);

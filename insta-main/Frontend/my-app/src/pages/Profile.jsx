@@ -271,7 +271,7 @@ const Profile = () => {
         <div className="grid grid-cols-3 gap-1 md:gap-4 mt-4">
           {(activeTab === 'posts' ? myPosts : savedPosts).map((post) => {
             const imageUrl = post.file_url || post.imageUrl || post.image || post.path;
-            const imageSrc = imageUrl?.startsWith('http') ? imageUrl : `http://localhost:3000/${imageUrl?.replace(/\\/g, '/')}`;
+            const imageSrc = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${imageUrl?.replace(/\\/g, '/')}`;
             
             return (
               <motion.div 

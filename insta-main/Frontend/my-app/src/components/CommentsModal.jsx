@@ -61,7 +61,7 @@ const CommentsModal = ({ post, onClose, onCommentAdded }) => {
   };
 
   const imageUrl = post.file_url || post.imageUrl || post.image || post.path;
-  const imageSrc = imageUrl?.startsWith('http') ? imageUrl : `http://localhost:3000/${imageUrl?.replace(/\\/g, '/')}`;
+  const imageSrc = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${imageUrl?.replace(/\\/g, '/')}`;
 
   return (
     <AnimatePresence>

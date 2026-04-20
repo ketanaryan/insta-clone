@@ -95,7 +95,7 @@ const PostCard = ({ post, onDelete }) => {
 
   // ── Image ──────────────────────────────────────────────────────────────────
   const imageUrl = post.file_url || post.imageUrl || post.image || post.path;
-  const imageSrc = imageUrl?.startsWith('http') ? imageUrl : `http://localhost:3000/${imageUrl?.replace(/\\/g, '/')}`;
+  const imageSrc = imageUrl?.startsWith('http') ? imageUrl : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/${imageUrl?.replace(/\\/g, '/')}`;
   const timeAgo = (post.upload_time || post.createdAt)
     ? formatDistanceToNow(new Date(post.upload_time || post.createdAt), { addSuffix: true })
     : 'Just now';
