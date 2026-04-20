@@ -105,7 +105,7 @@ app.get("/files", async (req, res) => {
             as: "author"
           }
         },
-        { $unwind: "$author" },
+        { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
         {
           $project: {
             "author.password": 0,
@@ -138,7 +138,7 @@ app.get("/files", async (req, res) => {
             as: "author"
           }
         },
-        { $unwind: "$author" },
+        { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
         {
           $project: {
             "author.password": 0,
@@ -696,7 +696,7 @@ app.get("/stories", async (req, res) => {
           as: "author"
         }
       },
-      { $unwind: "$author" },
+      { $unwind: { path: "$author", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           "author.password": 0,
